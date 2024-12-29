@@ -44,5 +44,4 @@ namespace combo_box_cs
         WM_NCMOUSEHOVER = 0x02A3,
         CB_SETCURSEL = 0x014E
     }
-
 }
