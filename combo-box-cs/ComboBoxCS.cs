@@ -37,9 +37,16 @@ namespace combo_box_cs
                     }
                 }
             };
-            KeyDown += (sender, e) =>_key = e.KeyData;
+            KeyDown += (sender, e) =>
+            { 
+                _key = e.KeyData;
+                // Capture, e.g. "pre-backspace"
+                _selectionStartB4 = SelectionStart;
+            };
         }
         Keys _key = Keys.None;
+        private int _selectionStartB4;
+
         protected override void OnSelectionChangeCommitted(EventArgs e)
         {
             base.OnSelectionChangeCommitted(e);
@@ -76,7 +83,7 @@ namespace combo_box_cs
                     {
                         if (captureKey == Keys.Back)
                         {
-                            SelectionStart = Math.Max(0, SelectionStart - 1);
+                            SelectionStart = Math.Max(0, _selectionStartB4 - 1);
                         }
                         var substr = Text.Substring(0, SelectionStart);
                         if (string.IsNullOrEmpty(substr))
