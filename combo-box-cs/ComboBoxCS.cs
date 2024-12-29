@@ -88,9 +88,11 @@ namespace combo_box_cs
             {
                 // Text is changing programmatically.
                 // Do not recalculate auto-complete here.
-
-                var sbText = Items[CaseSensitiveMatchIndex]?.ToString() ?? String.Empty;
-                Debug.Assert(sbText == Text, "Expecting this to be fixed in the WM_SETTEXT validation hook."); 
+                if (CaseSensitiveMatchIndex != -1)
+                {
+                    var sbText = Items[CaseSensitiveMatchIndex]?.ToString() ?? String.Empty;
+                    Debug.Assert(sbText == Text, "Expecting this to be fixed in the WM_SETTEXT validation hook.");
+                }
             }
             else
             {
