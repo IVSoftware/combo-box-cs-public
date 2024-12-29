@@ -49,11 +49,16 @@ namespace combo_box_cs
                     Debug.WriteLine($"{CaseSensitiveMatchIndex} proposed:{aspirant} sb:{sbText}");
                     if (aspirant != sbText)
                     {
-                        e.Cancel= true;
+#if false || RESEND
+                        e.Cancel = true;
                         BeginInvoke(() =>
                         {
                             Text = sbText;
                         });
+#else
+                        IntPtr lParam = Marshal.StringToHGlobalUni("Modified Text");
+                        e.ModifiedMessage = Message.Create(e.Message.HWnd, e.Message.Msg, e.Message.WParam, lParam);
+#endif
                     }
                 }
             };
@@ -235,6 +240,10 @@ namespace combo_box_cs
                     case WindowsMessages.WM_SETTEXT:
                         Debug.WriteLine($"EDIT {desc} value: {m.ExtractTextPayload()}");
                         WM_SETTEXT?.Invoke(this, e);
+                        if(e.ModifiedMessage is Message modifiedMessage)
+                        {
+                            m = modifiedMessage;
+                        }
                         break;
                     default:
                         break;
@@ -265,6 +274,7 @@ namespace combo_box_cs
         public CancelMessageEventArgs(Message message) => Message = message;
 
         public Message Message { get; }
+        public Message ModifiedMessage { get; set; }
     }
     static class Extensions
     {
