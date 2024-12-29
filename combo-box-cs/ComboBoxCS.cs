@@ -98,8 +98,10 @@ namespace combo_box_cs
                 if (CaseSensitiveMatchIndex != -1 )
                 {
                     var sbText = Items[CaseSensitiveMatchIndex]?.ToString() ?? String.Empty;
-                    Debug.WriteLine($"{CaseSensitiveMatchIndex} is:{Text} sb:{sbText}");
-                    if(Text != sbText)
+                    var mismatch = Text != sbText;
+                    var warning = mismatch ? " WARNING WARNING WARNING" : string.Empty;
+                    Debug.WriteLine($"{CaseSensitiveMatchIndex} is:{Text} sb:{sbText}{warning}");
+                    if(mismatch)
                     {
                         BeginInvoke(() => Text = sbText);
                     }
@@ -274,7 +276,7 @@ namespace combo_box_cs
         public CancelMessageEventArgs(Message message) => Message = message;
 
         public Message Message { get; }
-        public Message ModifiedMessage { get; set; }
+        public Message? ModifiedMessage { get; set; }
     }
     static class Extensions
     {
