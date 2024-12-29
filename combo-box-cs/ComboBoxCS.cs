@@ -46,19 +46,14 @@ namespace combo_box_cs
                 if (CaseSensitiveMatchIndex != -1)
                 {
                     var sbText = Items[CaseSensitiveMatchIndex]?.ToString() ?? String.Empty;
-                    Debug.WriteLine($"{CaseSensitiveMatchIndex} proposed:{aspirant} sb:{sbText}");
                     if (aspirant != sbText)
                     {
-#if false || RESEND
-                        e.Cancel = true;
-                        BeginInvoke(() =>
-                        {
-                            Text = sbText;
-                        });
-#else
+                        Debug.WriteLine($"{CaseSensitiveMatchIndex} CORRECTING {aspirant} to {sbText}!!");
+                        // Repair with what we know the text should be.
+                        // Replace the entire message with a new one here,
+                        // correcting the payload in the process.
                         IntPtr lParam = Marshal.StringToHGlobalUni(sbText);
                         e.ModifiedMessage = Message.Create(e.Message.HWnd, e.Message.Msg, e.Message.WParam, lParam);
-#endif
                     }
                 }
             };
