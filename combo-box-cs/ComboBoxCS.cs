@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -39,6 +40,23 @@ namespace combo_box_cs
                     }
                 }
             };
+            _editNativeWindow.WM_SETTEXT += (sender, e) =>
+            {
+                var aspirant = e.Message.ExtractTextPayload();
+                if (CaseSensitiveMatchIndex != -1)
+                {
+                    var sbText = Items[CaseSensitiveMatchIndex]?.ToString() ?? String.Empty;
+                    Debug.WriteLine($"{CaseSensitiveMatchIndex} proposed:{aspirant} sb:{sbText}");
+                    if (aspirant != sbText)
+                    {
+                        e.Cancel= true;
+                        BeginInvoke(() =>
+                        {
+                            Text = sbText;
+                        });
+                    }
+                }
+            };
         }
         Keys _key = Keys.None;
         private int _selectionStartB4;
@@ -69,8 +87,9 @@ namespace combo_box_cs
             if (captureKey == Keys.None)
             {
                 // Text is changing programmatically.
-                // Do not recalculate auto-complete here..
-                // This fixes an artifact of drop closing without committing the selection.
+                // Do not recalculate auto-complete here.
+
+                // This next block fixes an artifact of drop closing without committing the selection.
                 if (CaseSensitiveMatchIndex != -1 )
                 {
                     var sbText = Items[CaseSensitiveMatchIndex]?.ToString() ?? String.Empty;
@@ -214,7 +233,8 @@ namespace combo_box_cs
                 switch ((WindowsMessages)m.Msg)
                 {
                     case WindowsMessages.WM_SETTEXT:
-                        Debug.WriteLine($"EDIT {desc} value: {localExtractTextFromMessage(m)}");
+                        Debug.WriteLine($"EDIT {desc} value: {m.ExtractTextPayload()}");
+                        WM_SETTEXT?.Invoke(this, e);
                         break;
                     default:
                         break;
@@ -229,22 +249,14 @@ namespace combo_box_cs
                     switch ((WindowsMessages)m.Msg)
                     {
                         case WindowsMessages.WM_GETTEXT:
-                            Debug.WriteLineIf(false, $"EDIT {desc} value: {localExtractTextFromMessage(m)}");
+                            Debug.WriteLineIf(false, $"EDIT {desc} value: {m.ExtractTextPayload()}");
                             break;
                         default:
                             break;
                     }
                 }
-                string? localExtractTextFromMessage(Message msg)
-                {
-                    IntPtr textBuffer = msg.LParam;
-                    if (textBuffer != IntPtr.Zero)
-                    {
-                        return Marshal.PtrToStringUni(textBuffer) ?? string.Empty;
-                    }
-                    else return null;
-                }
             }
+            public event EventHandler<CancelMessageEventArgs>? WM_SETTEXT;
         }
         #endregion P I N V O K E
     }
@@ -253,5 +265,17 @@ namespace combo_box_cs
         public CancelMessageEventArgs(Message message) => Message = message;
 
         public Message Message { get; }
+    }
+    static class Extensions
+    {
+        public static string? ExtractTextPayload(this Message msg)
+        {
+            IntPtr textBuffer = msg.LParam;
+            if (textBuffer != IntPtr.Zero)
+            {
+                return Marshal.PtrToStringUni(textBuffer) ?? string.Empty;
+            }
+            else return null;
+        }
     }
 }
