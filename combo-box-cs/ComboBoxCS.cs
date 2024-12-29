@@ -56,7 +56,7 @@ namespace combo_box_cs
                             Text = sbText;
                         });
 #else
-                        IntPtr lParam = Marshal.StringToHGlobalUni("Modified Text");
+                        IntPtr lParam = Marshal.StringToHGlobalUni(sbText);
                         e.ModifiedMessage = Message.Create(e.Message.HWnd, e.Message.Msg, e.Message.WParam, lParam);
 #endif
                     }
@@ -94,18 +94,8 @@ namespace combo_box_cs
                 // Text is changing programmatically.
                 // Do not recalculate auto-complete here.
 
-                // This next block fixes an artifact of drop closing without committing the selection.
-                if (CaseSensitiveMatchIndex != -1 )
-                {
-                    var sbText = Items[CaseSensitiveMatchIndex]?.ToString() ?? String.Empty;
-                    var mismatch = Text != sbText;
-                    var warning = mismatch ? " WARNING WARNING WARNING" : string.Empty;
-                    Debug.WriteLine($"{CaseSensitiveMatchIndex} is:{Text} sb:{sbText}{warning}");
-                    if(mismatch)
-                    {
-                        BeginInvoke(() => Text = sbText);
-                    }
-                }
+                var sbText = Items[CaseSensitiveMatchIndex]?.ToString() ?? String.Empty;
+                Debug.Assert(sbText == Text, "Expecting this to be fixed in the WM_SETTEXT validation hook."); 
             }
             else
             {
@@ -240,9 +230,8 @@ namespace combo_box_cs
                 switch ((WindowsMessages)m.Msg)
                 {
                     case WindowsMessages.WM_SETTEXT:
-                        Debug.WriteLine($"EDIT {desc} value: {m.ExtractTextPayload()}");
                         WM_SETTEXT?.Invoke(this, e);
-                        if(e.ModifiedMessage is Message modifiedMessage)
+                        if (e.ModifiedMessage is Message modifiedMessage)
                         {
                             m = modifiedMessage;
                         }
