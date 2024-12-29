@@ -19,6 +19,7 @@ namespace combo_box_cs
         LB_SETTOPINDEX = 0x0189,
         LB_GETITEMRECT = 0x018B,
         WM_SETTEXT = 0x000C,
+        WM_GETTEXT = 0x000D,
         WM_ACTIVATEAPP = 0x001C,
         WM_PAINT = 0x0090,
         WM_DESTROY = 0x0002,

@@ -11,14 +11,18 @@ namespace combo_box_cs
 {
     public class ComboBoxCS : ComboBox
     {
-        IntPtr _hwndListBox;
-        ListBoxNativeWindow? _listBoxNativeWindow { get; set; }
+        IntPtr _hwndEdit, _hwndCombo, _hwndList;
+        ComboNativeWindow? _comboNativeWindow { get; set; }
+        ListNativeWindow? _listNativeWindow { get; set; }
+        EditNativeWindow? _editNativeWindow { get; set; }
         protected override void OnCreateControl()
         {
             base.OnCreateControl();
-            GetNativeListBoxHandle(this, out _hwndListBox);
-            _listBoxNativeWindow = new ListBoxNativeWindow(_hwndListBox);
-            _listBoxNativeWindow.LB_SETTOPINDEX += (sender, e) =>
+            GetNativeHandles(this, out _hwndCombo, out _hwndEdit, out _hwndList);
+            _comboNativeWindow = new ComboNativeWindow(_hwndCombo);
+            _listNativeWindow = new ListNativeWindow(_hwndList);
+            _editNativeWindow = new EditNativeWindow(_hwndEdit);
+            _listNativeWindow.LB_SETTOPINDEX += (sender, e) =>
             {
                 if(DroppedDown)
                 {
@@ -160,7 +164,7 @@ namespace combo_box_cs
             public int bottom;
         }
 
-        public static void GetNativeListBoxHandle(ComboBox comboBox, out IntPtr hwndList)
+        public static void GetNativeHandles(ComboBox comboBox, out IntPtr hwndCombo, out IntPtr hwndEdit, out IntPtr hwndList)
         {
             COMBOBOXINFO comboBoxInfo = new COMBOBOXINFO();
             comboBoxInfo.cbSize = Marshal.SizeOf(comboBoxInfo);
@@ -170,11 +174,13 @@ namespace combo_box_cs
             {
                 throw new InvalidOperationException("Failed to retrieve ComboBox information.");
             }
+            hwndCombo = comboBoxInfo.hwndCombo;
+            hwndEdit = comboBoxInfo.hwndEdit;
             hwndList = comboBoxInfo.hwndList;
         }
-        private class ListBoxNativeWindow : NativeWindow
+        private class ListNativeWindow : NativeWindow
         {
-            public ListBoxNativeWindow(IntPtr handle) => AssignHandle(handle);
+            public ListNativeWindow(IntPtr handle) => AssignHandle(handle);
             protected override void WndProc(ref Message m)
             {
                 var e = new CancelMessageEventArgs(m);
@@ -193,6 +199,94 @@ namespace combo_box_cs
                 else
                 {
                     base.WndProc(ref m);
+                }
+            }
+            public event EventHandler<CancelMessageEventArgs>? LB_SETTOPINDEX;
+        }
+        private class EditNativeWindow : NativeWindow
+        {
+            public EditNativeWindow(IntPtr handle) => AssignHandle(handle);
+            protected override void WndProc(ref Message m)
+            {
+                var desc = $"{(WindowsMessages)m.Msg}";
+                // Debug.WriteLine($"EDIT: {desc}");
+                var e = new CancelMessageEventArgs(m);
+                switch ((WindowsMessages)m.Msg)
+                {
+                    case WindowsMessages.WM_SETTEXT:
+                        Debug.WriteLine($"EDIT {desc} value: {localExtractTextFromMessage(m)}");
+                        break;
+                    default:
+                        break;
+                }
+                if (e.Cancel)
+                {
+                    m.Result = 1;
+                }
+                else
+                {
+                    base.WndProc(ref m);
+                    switch ((WindowsMessages)m.Msg)
+                    {
+                        case WindowsMessages.WM_GETTEXT:
+                            Debug.WriteLineIf(false, $"EDIT {desc} value: {localExtractTextFromMessage(m)}");
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                string? localExtractTextFromMessage(Message msg)
+                {
+                    IntPtr textBuffer = msg.LParam;
+                    if (textBuffer != IntPtr.Zero)
+                    {
+                        return Marshal.PtrToStringUni(textBuffer) ?? string.Empty;
+                    }
+                    else return null;
+                }
+            }
+        }
+        private class ComboNativeWindow : NativeWindow
+        {
+            public ComboNativeWindow(IntPtr handle) => AssignHandle(handle);
+            protected override void WndProc(ref Message m)
+            {
+                var desc = $"{(WindowsMessages)m.Msg}";
+                // Debug.WriteLine($"COMBO: {desc}");
+                var e = new CancelMessageEventArgs(m);
+                switch ((WindowsMessages)m.Msg)
+                {
+                    case WindowsMessages.WM_SETTEXT:
+                        Debug.WriteLine($"COMBO {desc} value: {localExtractTextFromMessage(m)}");
+                        break;
+                    default:
+                        break;
+                }
+                if (e.Cancel)
+                {
+                    m.Result = 1;
+                }
+                else
+                {
+                    base.WndProc(ref m);
+                    switch ((WindowsMessages)m.Msg)
+                    {
+                        case WindowsMessages.WM_GETTEXT:
+                             Debug.WriteLineIf(false, $"COMBO {desc} value: {localExtractTextFromMessage(m)}");
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                string? localExtractTextFromMessage(Message msg)
+                {
+                    IntPtr textBuffer = msg.LParam;
+
+                    if (textBuffer != IntPtr.Zero)
+                    {
+                        return Marshal.PtrToStringUni(textBuffer) ?? string.Empty;
+                    }
+                    else return null;
                 }
             }
             public event EventHandler<CancelMessageEventArgs>? LB_SETTOPINDEX;
