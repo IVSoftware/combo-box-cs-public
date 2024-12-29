@@ -12,14 +12,12 @@ namespace combo_box_cs
     public class ComboBoxCS : ComboBox
     {
         IntPtr _hwndEdit, _hwndCombo, _hwndList;
-        ComboNativeWindow? _comboNativeWindow { get; set; }
         ListNativeWindow? _listNativeWindow { get; set; }
         EditNativeWindow? _editNativeWindow { get; set; }
         protected override void OnCreateControl()
         {
             base.OnCreateControl();
             GetNativeHandles(this, out _hwndCombo, out _hwndEdit, out _hwndList);
-            _comboNativeWindow = new ComboNativeWindow(_hwndCombo);
             _listNativeWindow = new ListNativeWindow(_hwndList);
             _editNativeWindow = new EditNativeWindow(_hwndEdit);
             _listNativeWindow.LB_SETTOPINDEX += (sender, e) =>
@@ -183,6 +181,8 @@ namespace combo_box_cs
             public ListNativeWindow(IntPtr handle) => AssignHandle(handle);
             protected override void WndProc(ref Message m)
             {
+                var desc = $"{(WindowsMessages)m.Msg}";
+                Debug.WriteLineIf(false, $"LIST: {desc}");
                 var e = new CancelMessageEventArgs(m);
                 switch ((WindowsMessages)m.Msg)
                 {
@@ -209,7 +209,7 @@ namespace combo_box_cs
             protected override void WndProc(ref Message m)
             {
                 var desc = $"{(WindowsMessages)m.Msg}";
-                // Debug.WriteLine($"EDIT: {desc}");
+                Debug.WriteLineIf(false, $"EDIT: {desc}");
                 var e = new CancelMessageEventArgs(m);
                 switch ((WindowsMessages)m.Msg)
                 {
@@ -245,51 +245,6 @@ namespace combo_box_cs
                     else return null;
                 }
             }
-        }
-        private class ComboNativeWindow : NativeWindow
-        {
-            public ComboNativeWindow(IntPtr handle) => AssignHandle(handle);
-            protected override void WndProc(ref Message m)
-            {
-                var desc = $"{(WindowsMessages)m.Msg}";
-                // Debug.WriteLine($"COMBO: {desc}");
-                var e = new CancelMessageEventArgs(m);
-                switch ((WindowsMessages)m.Msg)
-                {
-                    case WindowsMessages.WM_SETTEXT:
-                        Debug.WriteLine($"COMBO {desc} value: {localExtractTextFromMessage(m)}");
-                        break;
-                    default:
-                        break;
-                }
-                if (e.Cancel)
-                {
-                    m.Result = 1;
-                }
-                else
-                {
-                    base.WndProc(ref m);
-                    switch ((WindowsMessages)m.Msg)
-                    {
-                        case WindowsMessages.WM_GETTEXT:
-                             Debug.WriteLineIf(false, $"COMBO {desc} value: {localExtractTextFromMessage(m)}");
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                string? localExtractTextFromMessage(Message msg)
-                {
-                    IntPtr textBuffer = msg.LParam;
-
-                    if (textBuffer != IntPtr.Zero)
-                    {
-                        return Marshal.PtrToStringUni(textBuffer) ?? string.Empty;
-                    }
-                    else return null;
-                }
-            }
-            public event EventHandler<CancelMessageEventArgs>? LB_SETTOPINDEX;
         }
         #endregion P I N V O K E
     }
