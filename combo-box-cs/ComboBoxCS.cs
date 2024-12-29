@@ -59,14 +59,15 @@ namespace combo_box_cs
             _key = Keys.None;
             if (captureKey == Keys.None)
             {
-                // Text is changing programmatically. Do not respond.
+                // Text is changing programmatically.
+                // Do not recalculate auto-complete here..
+                // This fixes an artifact of drop closing without committing the selection.
                 if (CaseSensitiveMatchIndex != -1 )
                 {
                     var sbText = Items[CaseSensitiveMatchIndex]?.ToString() ?? String.Empty;
                     Debug.WriteLine($"{CaseSensitiveMatchIndex} is:{Text} sb:{sbText}");
                     if(Text != sbText)
                     {
-                        // This fixes an artifact of drop closing without committing the selection.
                         BeginInvoke(() => Text = sbText);
                     }
                 }
@@ -84,6 +85,15 @@ namespace combo_box_cs
                         if (captureKey == Keys.Back)
                         {
                             SelectionStart = Math.Max(0, _selectionStartB4 - 1);
+                            if(SelectionStart == 0)
+                            {
+                                BeginInvoke(() =>
+                                {
+                                    CaseSensitiveMatchIndex = -1;
+                                    Text = string.Empty;
+                                });
+                                return;
+                            }
                         }
                         var substr = Text.Substring(0, SelectionStart);
                         if (string.IsNullOrEmpty(substr))
