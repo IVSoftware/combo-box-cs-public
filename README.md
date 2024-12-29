@@ -147,7 +147,7 @@ public class ComboBoxCS : ComboBox
         {
             // Text is changing programmatically.
             // Do not recalculate auto-complete here.
-    enter code here
+
             // This next block fixes an artifact of drop closing without committing the selection.
             if (CaseSensitiveMatchIndex != -1 )
             {
