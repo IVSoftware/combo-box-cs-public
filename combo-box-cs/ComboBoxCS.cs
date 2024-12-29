@@ -37,16 +37,23 @@ namespace combo_box_cs
                     }
                 }
             };
-            KeyDown += (sender, e) =>
-            { 
-                _key = e.KeyData;
-                // Capture, e.g. "pre-backspace"
-                _selectionStartB4 = SelectionStart;
-            };
         }
         Keys _key = Keys.None;
         private int _selectionStartB4;
-
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+            _key = e.KeyData;
+            if (_key == Keys.Return)
+            {
+                BeginInvoke(() => SelectAll());
+            }
+            else
+            {
+                // Capture, e.g. "pre-backspace"
+                _selectionStartB4 = SelectionStart;
+            }
+        }
         protected override void OnSelectionChangeCommitted(EventArgs e)
         {
             base.OnSelectionChangeCommitted(e);
@@ -76,44 +83,37 @@ namespace combo_box_cs
             {
                 BeginInvoke(() =>
                 {
-                    if (captureKey == Keys.Return)
+                    if (captureKey == Keys.Back)
+                    {
+                        SelectionStart = Math.Max(0, _selectionStartB4 - 1);
+                        if(SelectionStart == 0) // Backspaced to the start
+                        {
+                            BeginInvoke(() =>
+                            {
+                                CaseSensitiveMatchIndex = -1;
+                                Text = string.Empty;
+                            });
+                            return;
+                        }
+                    }
+                    var substr = Text.Substring(0, SelectionStart);
+                    if (string.IsNullOrEmpty(substr))
                     {
                         CaseSensitiveMatchIndex = -1;
                     }
                     else
                     {
-                        if (captureKey == Keys.Back)
+                        Debug.WriteLine(substr);
+                        int i;
+                        for (i = 0; i < Items.Count; i++)
                         {
-                            SelectionStart = Math.Max(0, _selectionStartB4 - 1);
-                            if(SelectionStart == 0)
+                            if ((Items[i]?.ToString() ?? string.Empty).StartsWith(substr))
                             {
-                                BeginInvoke(() =>
-                                {
-                                    CaseSensitiveMatchIndex = -1;
-                                    Text = string.Empty;
-                                });
-                                return;
+                                SelectIndexAndRestoreCursor(i);
+                                break;
                             }
                         }
-                        var substr = Text.Substring(0, SelectionStart);
-                        if (string.IsNullOrEmpty(substr))
-                        {
-                            CaseSensitiveMatchIndex = -1;
-                        }
-                        else
-                        {
-                            Debug.WriteLine(substr);
-                            int i;
-                            for (i = 0; i < Items.Count; i++)
-                            {
-                                if ((Items[i]?.ToString() ?? string.Empty).StartsWith(substr))
-                                {
-                                    SelectIndexAndRestoreCursor(i);
-                                    break;
-                                }
-                            }
-                            CaseSensitiveMatchIndex = i == Items.Count ? -1 : i;
-                        }
+                        CaseSensitiveMatchIndex = i == Items.Count ? -1 : i;
                     }
                 });
             }
